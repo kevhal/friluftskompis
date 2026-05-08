@@ -202,7 +202,7 @@ function AreaMap({
       const marker = L.marker([cabin.lat, cabin.lon], { icon })
         .addTo(map)
         .bindPopup(popupDiv);
-      
+
       cabinMarkersRef.current.push(marker);
     }
   }, [nearbyCabins]);
