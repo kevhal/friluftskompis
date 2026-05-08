@@ -114,7 +114,7 @@ export default function Home() {
           Friluftskompis hjelper deg fra idé til hjemkomst.
         </p>
         <a
-          href="/turer"
+          href="/start"
           className="inline-block rounded-full bg-white px-8 py-3.5 text-base font-medium text-[#2d4a2d] hover:bg-[#f0f8ec] transition-colors"
         >
           Start planleggingen gratis

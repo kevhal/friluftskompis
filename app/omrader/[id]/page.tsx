@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { API_URL, API_HEADERS, type Area, stripHtml, formatArea } from "../shared";
 import WeatherWidget from "@/app/components/WeatherWidget";
 import type { Cabin } from "@/app/api/cabins/route";
+import TripSuggestions from "./TripSuggestions";
 
 // ─── Leaflet types ────────────────────────────────────────────────────────────
 
@@ -415,6 +416,9 @@ export default function AreaDetailPage() {
                   />
                 </div>
               )}
+
+              {/* Turforslag */}
+              <TripSuggestions areaId={id} />
 
               {/* Beskrivelse */}
               {description && (
