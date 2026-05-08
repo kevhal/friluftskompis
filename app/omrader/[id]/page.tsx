@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -122,24 +123,32 @@ export default function AreaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const id = Number(params.id);
+  const isValidId = !isNaN(id);
+
   useEffect(() => {
-    const id = Number(params.id);
-    if (isNaN(id)) {
-      setError("Ugyldig område-ID");
-      setLoading(false);
-      return;
-    }
+    if (!isValidId) return;
+
+    let cancelled = false;
 
     fetchArea(id)
       .then((data) => {
+        if (cancelled) return;
         if (!data) setError("Området ble ikke funnet");
         else setArea(data);
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Ukjent feil")
-      )
-      .finally(() => setLoading(false));
-  }, [params.id]);
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Ukjent feil");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, isValidId]);
 
   const description = area?.description ? stripHtml(area.description) : null;
   const coords = area?.centerPointGeojson?.coordinates;
@@ -190,7 +199,13 @@ export default function AreaDetailPage() {
             Tilbake til alle områder
           </Link>
 
-          {loading && (
+          {!isValidId && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-700">
+              <p className="font-medium">Ugyldig område-ID</p>
+            </div>
+          )}
+
+          {isValidId && loading && (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2d4a2d] border-t-transparent" />
               <span className="ml-3 text-[#4a5e3a]">Henter område…</span>
