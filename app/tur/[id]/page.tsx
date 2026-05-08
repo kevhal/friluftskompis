@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { API_URL, API_HEADERS, stripHtml } from "@/app/omrader/shared";
 
 /* ------------------------------------------------------------------ */
@@ -217,9 +217,13 @@ function ImageGallery({ media }: { media: TripMedia[] }) {
 
 export default function TripDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fraDate, setFraDate] = useState("");
+  const [tilDate, setTilDate] = useState("");
+  const [areaCoords, setAreaCoords] = useState<[number, number] | null>(null);
 
   const id = Number(params.id);
   const isValidId = !isNaN(id);
@@ -246,6 +250,41 @@ export default function TripDetailPage() {
       cancelled = true;
     };
   }, [id, isValidId]);
+
+  /* Fetch coordinates from the first area */
+  useEffect(() => {
+    const firstAreaId = trip?.areas?.[0]?.id;
+    if (!firstAreaId) return;
+    let cancelled = false;
+
+    const query = `
+      query AreaCoords($filter: AreaFilter!) {
+        areas(filter: $filter, paging: { first: 1 }) {
+          edges { node { centerPointGeojson } }
+        }
+      }
+    `;
+
+    fetch(API_URL, {
+      method: "POST",
+      headers: API_HEADERS,
+      body: JSON.stringify({
+        query,
+        variables: { filter: { id: { eq: firstAreaId } } },
+      }),
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        const geo = json.data?.areas?.edges?.[0]?.node?.centerPointGeojson;
+        if (geo?.coordinates) {
+          setAreaCoords(geo.coordinates);
+        }
+      })
+      .catch(() => {/* ignore — weather just won't be available */});
+
+    return () => { cancelled = true; };
+  }, [trip?.areas]);
 
   const description = trip?.description ? stripHtml(trip.description) : null;
   const grading = trip?.grading ? GRADING_MAP[trip.grading] : null;
@@ -435,6 +474,83 @@ export default function TripDetailPage() {
                     {direction}
                   </span>
                 )}
+              </div>
+
+              {/* Date picker & "Dra på tur" */}
+              <div className="rounded-2xl border border-[#e0e8d8] bg-[#f8fbf5] p-5 mb-8">
+                <h2 className="text-lg font-semibold text-[#1a2e1a] mb-4">
+                  Planlegg turen
+                </h2>
+                <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="fra-dato"
+                      className="text-sm font-medium text-[#4a6741]"
+                    >
+                      Fra
+                    </label>
+                    <input
+                      id="fra-dato"
+                      type="date"
+                      value={fraDate}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => {
+                        setFraDate(e.target.value);
+                        if (tilDate && e.target.value > tilDate) {
+                          setTilDate(e.target.value);
+                        }
+                      }}
+                      className="rounded-lg border border-[#e0e8d8] bg-white px-3 py-2 text-sm text-[#1a2e1a] focus:outline-none focus:ring-2 focus:ring-[#2d4a2d]/30"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="til-dato"
+                      className="text-sm font-medium text-[#4a6741]"
+                    >
+                      Til
+                    </label>
+                    <input
+                      id="til-dato"
+                      type="date"
+                      value={tilDate}
+                      min={fraDate || new Date().toISOString().split("T")[0]}
+                      onChange={(e) => setTilDate(e.target.value)}
+                      className="rounded-lg border border-[#e0e8d8] bg-white px-3 py-2 text-sm text-[#1a2e1a] focus:outline-none focus:ring-2 focus:ring-[#2d4a2d]/30"
+                    />
+                  </div>
+                  <button
+                    disabled={!fraDate || !tilDate}
+                    onClick={() => {
+                      const sp = new URLSearchParams({
+                        turId: String(trip.id),
+                        fra: fraDate,
+                        til: tilDate,
+                      });
+                      if (areaCoords) {
+                        sp.set("lat", String(areaCoords[1]));
+                        sp.set("lon", String(areaCoords[0]));
+                      }
+                      router.push(`/turplanlegger?${sp}`);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#2d4a2d] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#3d6b3d] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#2d4a2d]"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Dra på tur
+                  </button>
+                </div>
               </div>
 
               {/* Image gallery */}
