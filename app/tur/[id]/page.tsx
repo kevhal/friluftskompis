@@ -221,8 +221,25 @@ export default function TripDetailPage() {
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fraDate, setFraDate] = useState("");
-  const [tilDate, setTilDate] = useState("");
+  const [fraDate, setFraDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun … 5=Fri 6=Sat
+    const daysUntilFri = (5 - day + 7) % 7 || 7; // next Friday, not today
+    const fri = new Date(today);
+    fri.setDate(today.getDate() + daysUntilFri);
+    return fri.toISOString().split("T")[0];
+  });
+  const [tilDate, setTilDate] = useState(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const daysUntilSun = (7 - day) % 7 || 7; // next Sunday
+    const daysUntilFri = (5 - day + 7) % 7 || 7;
+    // If Sunday comes before Friday (e.g. on Saturday), push a week
+    const offset = daysUntilSun <= daysUntilFri ? daysUntilSun + 7 : daysUntilSun;
+    const sun = new Date(today);
+    sun.setDate(today.getDate() + offset);
+    return sun.toISOString().split("T")[0];
+  });
   const [areaCoords, setAreaCoords] = useState<[number, number] | null>(null);
 
   const id = Number(params.id);
