@@ -73,8 +73,8 @@ async function fetchFromApi(): Promise<Cabin[]> {
 
     const json = await res.json();
     if (json.errors) {
-      const errMsg = json.errors[0]?.message;
-      throw new Error(errMsg ?? `GraphQL error without message (page ${page}): ${JSON.stringify(json.errors)}`);
+      const errorMessage = json.errors[0]?.message;
+      throw new Error(errorMessage ?? `GraphQL error without message (page ${page}): ${JSON.stringify(json.errors)}`);
     }
     if (!json.data?.facilities) {
       throw new Error("Missing facilities data in GraphQL response");
