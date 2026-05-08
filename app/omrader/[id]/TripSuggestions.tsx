@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { API_URL, API_HEADERS, stripHtml } from "../shared";
 
 /* ------------------------------------------------------------------ */
@@ -287,9 +288,10 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
             : null;
 
           return (
-            <article
+            <Link
               key={trip.id}
-              className="relative rounded-2xl border border-[#e0e8d8] bg-white p-5 transition-shadow hover:shadow-md"
+              href={`/tur/${trip.id}`}
+              className="block relative rounded-2xl border border-[#e0e8d8] bg-white p-5 transition-shadow hover:shadow-md"
             >
               {/* Popular badge */}
               {isPopular && (
@@ -395,7 +397,7 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
                   <span className="text-[#8a9e7a]">{direction}</span>
                 )}
               </div>
-            </article>
+            </Link>
           );
         })}
       </div>
