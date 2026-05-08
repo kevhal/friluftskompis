@@ -11,13 +11,14 @@ export default function Home() {
         <div className="flex items-center gap-6 text-sm text-[#4a6741]">
           <a href="#features" className="hover:text-[#2d4a2d] transition-colors">Funksjoner</a>
           <Link href="/omrader" className="hover:text-[#2d4a2d] transition-colors">Områder</Link>
+          <Link href="/pakkeliste" className="hover:text-[#2d4a2d] transition-colors">Pakkeliste</Link>
           <a href="#om" className="hover:text-[#2d4a2d] transition-colors">Om</a>
-          <a
+          <Link
             href="/turer"
             className="rounded-full bg-[#2d4a2d] px-4 py-2 text-white hover:bg-[#3d6b3d] transition-colors"
           >
             Kom i gang
-          </a>
+          </Link>
         </div>
       </nav>
 
@@ -38,12 +39,12 @@ export default function Home() {
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
-          <a
+          <Link
             href="/turer"
             className="rounded-full bg-[#2d4a2d] px-8 py-3.5 text-base font-medium text-white hover:bg-[#3d6b3d] transition-colors shadow-md"
           >
             Planlegg din neste tur
-          </a>
+          </Link>
           <a
             href="#features"
             className="rounded-full border border-[#a0b890] px-8 py-3.5 text-base font-medium text-[#2d4a2d] hover:bg-[#e8f0e0] transition-colors"
@@ -60,47 +61,59 @@ export default function Home() {
             Alt du trenger for turen
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                icon: "🗺",
-                title: "Turforslag",
-                desc: "Få anbefalte turer basert på sesong, vanskelighetsgrad og område.",
-              },
-              {
-                icon: "🌤",
-                title: "Værvarsler",
-                desc: "Live Yr-data for valgt tur – nedbør, temperatur og vind dag for dag.",
-              },
-              {
-                icon: "🎒",
-                title: "AI-pakkeliste",
-                desc: "Automatisk pakkeliste tilpasset vær, varighet og antall deltakere.",
-              },
-              {
-                icon: "🏕",
-                title: "Hyttekart",
-                desc: "Interaktivt kart med DNT-hytter og overnattingsmuligheter.",
-              },
-              {
-                icon: "👥",
-                title: "Inviter venner",
-                desc: "Del turen med en lenke og planlegg sammen.",
-              },
-              {
-                icon: "🧾",
-                title: "Etteroppgjør",
-                desc: "Hold styr på utgifter og gjør opp etter turen.",
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-[#e0e8d8] bg-[#f8fbf5] p-6 hover:shadow-sm transition-shadow"
-              >
-                <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-semibold text-[#1a2e1a] mb-1">{f.title}</h3>
-                <p className="text-sm text-[#5a6e50] leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
+            {(
+              [
+                {
+                  icon: "🗺",
+                  title: "Turforslag",
+                  desc: "Få anbefalte turer basert på sesong, vanskelighetsgrad og område.",
+                },
+                {
+                  icon: "🌤",
+                  title: "Værvarsler",
+                  desc: "Live Yr-data for valgt tur – nedbør, temperatur og vind dag for dag.",
+                },
+                {
+                  icon: "🎒",
+                  title: "AI-pakkeliste",
+                  desc: "Automatisk pakkeliste tilpasset vær, varighet og antall deltakere.",
+                  href: "/pakkeliste",
+                },
+                {
+                  icon: "🏕",
+                  title: "Hyttekart",
+                  desc: "Interaktivt kart med DNT-hytter og overnattingsmuligheter.",
+                },
+                {
+                  icon: "👥",
+                  title: "Inviter venner",
+                  desc: "Del turen med en lenke og planlegg sammen.",
+                },
+                {
+                  icon: "🧾",
+                  title: "Etteroppgjør",
+                  desc: "Hold styr på utgifter og gjør opp etter turen.",
+                },
+              ] as { icon: string; title: string; desc: string; href?: string }[]
+            ).map((f) => {
+              const card = (
+                <div
+                  key={f.title}
+                  className="rounded-2xl border border-[#e0e8d8] bg-[#f8fbf5] p-6 hover:shadow-sm transition-shadow"
+                >
+                  <div className="text-3xl mb-3">{f.icon}</div>
+                  <h3 className="font-semibold text-[#1a2e1a] mb-1">{f.title}</h3>
+                  <p className="text-sm text-[#5a6e50] leading-relaxed">{f.desc}</p>
+                </div>
+              );
+              return f.href ? (
+                <Link key={f.title} href={f.href} className="block">
+                  {card}
+                </Link>
+              ) : (
+                card
+              );
+            })}
           </div>
         </div>
       </section>
@@ -113,17 +126,17 @@ export default function Home() {
         <p className="text-[#a8c898] mb-8 text-lg">
           Friluftskompis hjelper deg fra idé til hjemkomst.
         </p>
-        <a
+        <Link
           href="/start"
           className="inline-block rounded-full bg-white px-8 py-3.5 text-base font-medium text-[#2d4a2d] hover:bg-[#f0f8ec] transition-colors"
         >
           Start planleggingen gratis
-        </a>
+        </Link>
       </section>
 
       {/* Footer */}
       <footer className="bg-[#1a2e1a] py-6 text-center text-sm text-[#6a8a5a]">
-        © 2025 Friluftskompis · Laget med ❤️ for norsk natur
+        © {new Date().getFullYear()} Friluftskompis · Laget med ❤️ for norsk natur
       </footer>
     </div>
   );
