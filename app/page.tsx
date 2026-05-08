@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f0eb] font-sans">
@@ -8,7 +10,7 @@ export default function Home() {
         </span>
         <div className="flex items-center gap-6 text-sm text-[#4a6741]">
           <a href="#features" className="hover:text-[#2d4a2d] transition-colors">Funksjoner</a>
-          <a href="/omrader" className="hover:text-[#2d4a2d] transition-colors">Områder</a>
+          <Link href="/omrader" className="hover:text-[#2d4a2d] transition-colors">Områder</Link>
           <a href="#om" className="hover:text-[#2d4a2d] transition-colors">Om</a>
           <a
             href="/turer"
