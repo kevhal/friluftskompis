@@ -3,103 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { ForecastResponse, TimeseriesEntry } from "@/lib/yr";
-import { groupForecastByDay } from "@/lib/yr";
 import { API_URL, API_HEADERS } from "@/app/omrader/shared";
-
-/* ------------------------------------------------------------------ */
-/*  Weather symbol → emoji mapping                                     */
-/* ------------------------------------------------------------------ */
-
-const SYMBOL_EMOJI: Record<string, string> = {
-  clearsky: "☀️",
-  fair: "🌤️",
-  partlycloudy: "⛅",
-  cloudy: "☁️",
-  fog: "🌫️",
-  rain: "🌧️",
-  lightrain: "🌦️",
-  heavyrain: "🌧️",
-  sleet: "🌨️",
-  snow: "❄️",
-  lightsnow: "🌨️",
-  heavysnow: "❄️",
-  thunder: "⛈️",
-  rainandthunder: "⛈️",
-};
-
-function symbolToEmoji(symbolCode: string | null): string {
-  if (!symbolCode) return "🌤️";
-  // Strip _day / _night / _polartwilight suffix
-  const base = symbolCode.replace(/_(day|night|polartwilight)$/, "");
-  return SYMBOL_EMOJI[base] ?? "🌤️";
-}
-
-/* ------------------------------------------------------------------ */
-/*  Summarise a day's timeseries into a single weather summary         */
-/* ------------------------------------------------------------------ */
-
-interface DaySummary {
-  date: string;
-  minTemp: number;
-  maxTemp: number;
-  symbolCode: string | null;
-  totalPrecipitation: number;
-  maxWind: number;
-}
-
-function summariseDay(
-  date: string,
-  entries: TimeseriesEntry[]
-): DaySummary {
-  let minTemp = Infinity;
-  let maxTemp = -Infinity;
-  let totalPrecipitation = 0;
-  let maxWind = 0;
-  let symbolCode: string | null = null;
-
-  for (const entry of entries) {
-    const temp = entry.data.instant.details.air_temperature;
-    if (temp != null) {
-      minTemp = Math.min(minTemp, temp);
-      maxTemp = Math.max(maxTemp, temp);
-    }
-
-    const wind = entry.data.instant.details.wind_speed;
-    if (wind != null) maxWind = Math.max(maxWind, wind);
-
-    const precip =
-      entry.data.next_1_hours?.details.precipitation_amount ??
-      entry.data.next_6_hours?.details.precipitation_amount;
-    if (precip != null) totalPrecipitation += precip;
-
-    // Pick symbol from middle-of-day entry (~12:00) if possible
-    const hour = new Date(entry.time).getHours();
-    if (hour >= 11 && hour <= 13) {
-      symbolCode =
-        entry.data.next_1_hours?.summary.symbol_code ??
-        entry.data.next_6_hours?.summary.symbol_code ??
-        symbolCode;
-    }
-  }
-
-  // Fallback: use first entry's symbol if none found at noon
-  if (!symbolCode && entries.length > 0) {
-    symbolCode =
-      entries[0].data.next_1_hours?.summary.symbol_code ??
-      entries[0].data.next_6_hours?.summary.symbol_code ??
-      null;
-  }
-
-  return {
-    date,
-    minTemp: minTemp === Infinity ? 0 : Math.round(minTemp),
-    maxTemp: maxTemp === -Infinity ? 0 : Math.round(maxTemp),
-    symbolCode,
-    totalPrecipitation: Math.round(totalPrecipitation * 10) / 10,
-    maxWind: Math.round(maxWind * 10) / 10,
-  };
-}
+import WeatherWidget from "@/app/components/WeatherWidget";
 
 /* ------------------------------------------------------------------ */
 /*  Norwegian day name                                                 */
@@ -135,12 +40,7 @@ export default function TurplanleggerClient() {
 
   const hasCoords = Boolean(lat && lon);
   const [tripName, setTripName] = useState<string | null>(null);
-  const [weather, setWeather] = useState<DaySummary[]>([]);
   const [loadingTrip, setLoadingTrip] = useState(true);
-  const [loadingWeather, setLoadingWeather] = useState(hasCoords);
-  const [weatherError, setWeatherError] = useState<string | null>(
-    hasCoords ? null : "Ingen koordinater tilgjengelig for denne turen."
-  );
 
   const missingParams = !turId || !fra || !til;
 
@@ -173,42 +73,6 @@ export default function TurplanleggerClient() {
       .finally(() => setLoadingTrip(false));
   }, [turId]);
 
-  /* Fetch weather */
-  useEffect(() => {
-    if (!lat || !lon) return;
-
-    fetch(`/api/weather?lat=${lat}&lon=${lon}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`Feil fra vær-API: ${res.status}`);
-        return res.json() as Promise<ForecastResponse>;
-      })
-      .then((forecast) => {
-        const byDay = groupForecastByDay(forecast);
-        const summaries: DaySummary[] = [];
-
-        // Filter to only the selected date range
-        for (const [date, entries] of Object.entries(byDay)) {
-          if (fra && til && date >= fra && date <= til) {
-            summaries.push(summariseDay(date, entries));
-          }
-        }
-
-        summaries.sort((a, b) => a.date.localeCompare(b.date));
-        setWeather(summaries);
-
-        if (summaries.length === 0) {
-          setWeatherError(
-            "Værmelding er kun tilgjengelig ~9 dager frem i tid. De valgte datoene har ikke værdata ennå."
-          );
-        }
-      })
-      .catch((err) => {
-        setWeatherError(
-          err instanceof Error ? err.message : "Kunne ikke hente værdata."
-        );
-      })
-      .finally(() => setLoadingWeather(false));
-  }, [lat, lon, fra, til]);
 
   if (missingParams) {
     return (
@@ -284,65 +148,16 @@ export default function TurplanleggerClient() {
           Værmelding
         </h2>
 
-        {loadingWeather && (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2d4a2d] border-t-transparent" />
-            <span className="ml-3 text-[#4a5e3a]">Henter værdata…</span>
-          </div>
-        )}
-
-        {weatherError && !loadingWeather && (
+        {hasCoords ? (
+          <WeatherWidget
+            coords={{ lat: Number(lat), lon: Number(lon) }}
+            label={tripName ?? undefined}
+            fromDate={fra ?? undefined}
+            toDate={til ?? undefined}
+          />
+        ) : (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800 text-sm">
-            {weatherError}
-          </div>
-        )}
-
-        {!loadingWeather && weather.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {weather.map((day) => (
-              <div
-                key={day.date}
-                className="rounded-2xl border border-[#e0e8d8] bg-[#f8fbf5] p-5"
-              >
-                <p className="text-sm font-medium text-[#4a6741] mb-1">
-                  {formatNorwegianDate(day.date)}
-                </p>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">
-                    {symbolToEmoji(day.symbolCode)}
-                  </span>
-                  <div>
-                    <p className="text-2xl font-bold text-[#1a2e1a]">
-                      {day.maxTemp}°
-                      <span className="text-base font-normal text-[#5a6e50]">
-                        /{day.minTemp}°
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#5a6e50]">
-                  <span className="inline-flex items-center gap-1">
-                    <svg
-                      className="h-3.5 w-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999A5.002 5.002 0 0012 4a5 5 0 00-4.546 2.916A4.001 4.001 0 003 11v0"
-                      />
-                    </svg>
-                    {day.maxWind} m/s
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    💧 {day.totalPrecipitation} mm
-                  </span>
-                </div>
-              </div>
-            ))}
+            Ingen koordinater tilgjengelig for denne turen.
           </div>
         )}
       </div>
