@@ -1,0 +1,17 @@
+{
+  "focus_areas": ["bugs", "security", "performance", "readability", "maintainability"],
+  "priority_weights": {
+    "bugs": 5,
+    "security": 4,
+    "performance": 3,
+    "readability": 3,
+    "maintainability": 3
+  },
+  "team_preferences": [
+    "Flag anchor links with no matching id target on the page",
+    "Flag hardcoded copyright years — use new Date().getFullYear()",
+    "Prefer Tailwind config tokens over arbitrary hex values"
+  ],
+  "skip_areas": [],
+  "last_updated": "2025-05-08 — initial profile from first review of app/page.tsx"
+}
