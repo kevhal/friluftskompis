@@ -11,3 +11,7 @@ The skill lives at `skills/code-review/SKILL.md` and maintains a review profile 
 ## Lint
 
 After every code change, run `pnpm lint` before considering the task done. Fix all errors before moving on. Warnings can be left if they are not actionable.
+
+## Navigation
+
+Always use `<Link />` from `next/link` for internal navigation — never use plain `<a>` elements for internal routes. See: https://nextjs.org/docs/messages/no-html-link-for-pages
