@@ -105,6 +105,40 @@ function formatDuration(hours: number | null, minutes: number | null): string {
 const POPULAR_MEDIA_THRESHOLD = 3;
 
 /* ------------------------------------------------------------------ */
+/*  Filter helpers                                                     */
+/* ------------------------------------------------------------------ */
+
+type Grading = "EASY" | "MODERATE" | "TOUGH" | "VERY_TOUGH";
+
+const ALL_GRADINGS: Grading[] = ["EASY", "MODERATE", "TOUGH", "VERY_TOUGH"];
+
+interface DurationRange {
+  label: string;
+  min: number; // minutes
+  max: number; // minutes (Infinity for open-ended)
+}
+
+const DURATION_RANGES: DurationRange[] = [
+  { label: "Under 1 t", min: 0, max: 60 },
+  { label: "1–3 t", min: 60, max: 180 },
+  { label: "3–5 t", min: 180, max: 300 },
+  { label: "Over 5 t", min: 300, max: Infinity },
+];
+
+function getTripDurationMinutes(trip: Trip): number | null {
+  const h = trip.durationHours ?? 0;
+  const m = trip.durationMinutes ?? 0;
+  if (h === 0 && m === 0) return null;
+  return h * 60 + m;
+}
+
+function tripMatchesDuration(trip: Trip, range: DurationRange): boolean {
+  const mins = getTripDurationMinutes(trip);
+  if (mins === null) return false;
+  return mins >= range.min && mins < range.max;
+}
+
+/* ------------------------------------------------------------------ */
 /*  GraphQL query                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -173,6 +207,8 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [selectedGradings, setSelectedGradings] = useState<Set<Grading>>(new Set());
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
 
   const season = getCurrentSeason();
   const meta = SEASON_META[season];
@@ -197,9 +233,41 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
     };
   }, [areaId]);
 
-  /* Filter by current season, then sort: popular first, then by media count */
+  const toggleGrading = (g: Grading) => {
+    setSelectedGradings((prev) => {
+      const next = new Set(prev);
+      if (next.has(g)) next.delete(g);
+      else next.add(g);
+      return next;
+    });
+    setShowAll(false);
+  };
+
+  const toggleDuration = (index: number) => {
+    setSelectedDuration((prev) => (prev === index ? null : index));
+    setShowAll(false);
+  };
+
+  const hasActiveFilters = selectedGradings.size > 0 || selectedDuration !== null;
+
+  const clearFilters = () => {
+    setSelectedGradings(new Set());
+    setSelectedDuration(null);
+    setShowAll(false);
+  };
+
+  /* Filter by current season + user filters, then sort by popularity */
   const seasonTrips = allTrips
     .filter((t) => tripMatchesSeason(t, season))
+    .filter((t) => {
+      if (selectedGradings.size > 0) {
+        if (!t.grading || !selectedGradings.has(t.grading)) return false;
+      }
+      if (selectedDuration !== null) {
+        if (!tripMatchesDuration(t, DURATION_RANGES[selectedDuration])) return false;
+      }
+      return true;
+    })
     .sort((a, b) => b.media.length - a.media.length);
 
   const INITIAL_COUNT = 6;
@@ -233,7 +301,10 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
     );
   }
 
-  if (seasonTrips.length === 0) {
+  /* Count season trips before user filters to know if we should show filters */
+  const seasonTripsTotal = allTrips.filter((t) => tripMatchesSeason(t, season)).length;
+
+  if (seasonTripsTotal === 0) {
     return (
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-[#1a2e1a] mb-3">
@@ -260,8 +331,81 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
         </span>
       </div>
 
+      {/* Filters */}
+      <div className="mb-4 space-y-3">
+        {/* Vanskelighetsgrad */}
+        <div>
+          <p className="text-xs font-medium text-[#4a5e3a] mb-1.5">Vanskelighetsgrad</p>
+          <div className="flex flex-wrap gap-2">
+            {ALL_GRADINGS.map((g) => {
+              const info = GRADING_MAP[g];
+              const isActive = selectedGradings.has(g);
+              return (
+                <button
+                  key={g}
+                  onClick={() => toggleGrading(g)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
+                    isActive
+                      ? `${info.color} border-current`
+                      : "bg-white text-[#6a8a5a] border-[#e0e8d8] hover:border-[#b0c8a0]"
+                  }`}
+                >
+                  {info.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Varighet */}
+        <div>
+          <p className="text-xs font-medium text-[#4a5e3a] mb-1.5">Varighet</p>
+          <div className="flex flex-wrap gap-2">
+            {DURATION_RANGES.map((range, i) => {
+              const isActive = selectedDuration === i;
+              return (
+                <button
+                  key={range.label}
+                  onClick={() => toggleDuration(i)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
+                    isActive
+                      ? "bg-[#d4e8c2] text-[#2d4a2d] border-[#b0c8a0]"
+                      : "bg-white text-[#6a8a5a] border-[#e0e8d8] hover:border-[#b0c8a0]"
+                  }`}
+                >
+                  {range.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Clear filters */}
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="text-xs text-[#4a6741] hover:text-[#2d4a2d] underline transition-colors"
+          >
+            Nullstill filtre
+          </button>
+        )}
+      </div>
+
+      {/* Empty state after filtering */}
+      {seasonTrips.length === 0 && hasActiveFilters && (
+        <p className="text-sm text-[#4a5e3a] py-6 text-center">
+          Ingen turer matcher valgte filtre.{" "}
+          <button
+            onClick={clearFilters}
+            className="underline hover:text-[#2d4a2d] transition-colors"
+          >
+            Nullstill filtre
+          </button>
+        </p>
+      )}
+
       {/* Trip cards grid */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      {seasonTrips.length > 0 && <div className="grid gap-4 sm:grid-cols-2">
         {visibleTrips.map((trip) => {
           const grading = trip.grading
             ? GRADING_MAP[trip.grading]
@@ -400,10 +544,10 @@ export default function TripSuggestions({ areaId }: { areaId: number }) {
             </Link>
           );
         })}
-      </div>
+      </div>}
 
       {/* Show more / less */}
-      {hasMore && (
+      {seasonTrips.length > 0 && hasMore && (
         <div className="mt-4 text-center">
           <button
             onClick={() => setShowAll((v) => !v)}
