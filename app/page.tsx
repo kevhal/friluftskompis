@@ -8,6 +8,7 @@ export default function Home() {
         </span>
         <div className="flex items-center gap-6 text-sm text-[#4a6741]">
           <a href="#features" className="hover:text-[#2d4a2d] transition-colors">Funksjoner</a>
+          <a href="/omrader" className="hover:text-[#2d4a2d] transition-colors">Områder</a>
           <a href="#om" className="hover:text-[#2d4a2d] transition-colors">Om</a>
           <a
             href="/turer"
