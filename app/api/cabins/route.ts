@@ -68,12 +68,15 @@ async function fetchFromApi(): Promise<Cabin[]> {
     });
 
     if (!res.ok) {
-      throw new Error(`API request failed with status ${res.status}`);
+      throw new Error(`API request to DNT GraphQL (page ${page}) failed with status ${res.status}`);
     }
 
     const json = await res.json();
-    if (json.errors || !json.data?.facilities) {
-      throw new Error(json.errors?.[0]?.message ?? "GraphQL error");
+    if (json.errors) {
+      throw new Error(json.errors[0]?.message ?? "GraphQL error");
+    }
+    if (!json.data?.facilities) {
+      throw new Error("Missing facilities data in GraphQL response");
     }
 
     const { edges, pageInfo } = json.data.facilities;
