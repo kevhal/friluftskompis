@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { SearchResult } from "@/app/api/search/route";
 
 interface Props {
@@ -57,7 +58,7 @@ export default function SearchBar({ onSelect }: Props) {
     onSelect(result);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (!open) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();

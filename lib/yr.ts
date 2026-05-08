@@ -168,15 +168,23 @@ export function getCurrentConditions(
   };
 }
 
+// "sv-SE" locale formats dates as YYYY-MM-DD, matching the ISO-style keys used downstream
+const osloDateFormatter = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Europe/Oslo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 /**
- * Group timeseries entries by calendar date (YYYY-MM-DD).
+ * Group timeseries entries by calendar date (YYYY-MM-DD) in Europe/Oslo time.
  */
 export function groupForecastByDay(
   forecast: ForecastResponse
 ): Record<string, TimeseriesEntry[]> {
   const result: Record<string, TimeseriesEntry[]> = {};
   for (const entry of forecast.properties.timeseries) {
-    const day = entry.time.slice(0, 10);
+    const day = osloDateFormatter.format(new Date(entry.time));
     if (!result[day]) result[day] = [];
     result[day].push(entry);
   }

@@ -37,13 +37,20 @@ interface LoadedState {
 
 const DAY_NAMES = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"];
 
+const osloDateFormatter = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "Europe/Oslo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 function formatDay(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const tomorrowStr = new Date(today.getTime() + 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  const now = new Date();
+  const todayStr = osloDateFormatter.format(now);
+  const tomorrowStr = osloDateFormatter.format(
+    new Date(now.getTime() + 86_400_000)
+  );
   if (dateStr === todayStr) return "I dag";
   if (dateStr === tomorrowStr) return "I morgen";
   return DAY_NAMES[d.getDay()];

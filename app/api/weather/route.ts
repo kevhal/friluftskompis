@@ -18,6 +18,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    return NextResponse.json(
+      { error: "lat/lon er utenfor gyldig område (lat ∈ [-90, 90], lon ∈ [-180, 180])" },
+      { status: 400 }
+    );
+  }
+
   try {
     const forecast = await getForecast({ lat, lon });
     return NextResponse.json(forecast);

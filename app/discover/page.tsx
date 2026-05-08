@@ -32,7 +32,7 @@ export default function DiscoverPage() {
       {/* Header */}
       <header className="px-6 pt-12 pb-8 text-center">
         <div className="inline-flex items-center gap-2 rounded-full bg-[#d4e8c2] px-4 py-1.5 text-sm text-[#2d4a2d] mb-6">
-          <span>Søk og oppdage</span>
+          <span>Søk og oppdag</span>
         </div>
         <h1 className="text-4xl font-bold tracking-tight text-[#1a2e1a]">
           Finn ditt neste eventyr
