@@ -15,6 +15,9 @@ interface Coords {
 interface Props {
   coords: Coords;
   label?: string;
+  /** Optional date range filter (YYYY-MM-DD). When provided, only days within this range are shown. */
+  fromDate?: string;
+  toDate?: string;
 }
 
 interface DayGroup {
@@ -75,7 +78,7 @@ function weatherEmoji(symbolCode: string | null): string {
   return "🌡️";
 }
 
-export default function WeatherWidget({ coords, label }: Props) {
+export default function WeatherWidget({ coords, label, fromDate, toDate }: Props) {
   /**
    * We store the last completed fetch together with the coords it was for.
    * When coords change, `loaded` is stale — we derive `isLoading` from
@@ -116,8 +119,15 @@ export default function WeatherWidget({ coords, label }: Props) {
   const days = useMemo<DayGroup[]>(() => {
     if (!loaded || loaded.result.status !== "ok") return [];
     const grouped = groupForecastByDay(loaded.result.forecast);
-    return Object.entries(grouped)
-      .slice(0, 5)
+    const filtered = Object.entries(grouped)
+      .filter(([date]) => {
+        if (fromDate && date < fromDate) return false;
+        if (toDate && date > toDate) return false;
+        return true;
+      });
+    // When no date range is given, cap at 5 days (original behaviour)
+    const sliced = (fromDate || toDate) ? filtered : filtered.slice(0, 5);
+    return sliced
       .map(([date, entries]) => {
         const symbolCode =
           entries.find((e) => e.data.next_6_hours)?.data.next_6_hours?.summary
@@ -149,7 +159,7 @@ export default function WeatherWidget({ coords, label }: Props) {
           precipitation: Math.round(precipitation * 10) / 10,
         };
       });
-  }, [loaded]);
+  }, [loaded, fromDate, toDate]);
 
   const current = useMemo(() => {
     if (!loaded || loaded.result.status !== "ok") return null;
