@@ -67,10 +67,14 @@ async function fetchFromApi(): Promise<Cabin[]> {
       next: { revalidate: 3600 },
     });
 
-    if (!res.ok) break;
+    if (!res.ok) {
+      throw new Error(`API request failed with status ${res.status}`);
+    }
 
     const json = await res.json();
-    if (json.errors || !json.data?.facilities) break;
+    if (json.errors || !json.data?.facilities) {
+      throw new Error(json.errors?.[0]?.message ?? "GraphQL error");
+    }
 
     const { edges, pageInfo } = json.data.facilities;
 

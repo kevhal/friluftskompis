@@ -16,8 +16,9 @@ interface LeafletMap {
 
 interface LeafletMarker {
   addTo(map: LeafletMap): LeafletMarker;
-  bindPopup(content: string): LeafletMarker;
+  bindPopup(content: string | HTMLElement): LeafletMarker;
   openPopup(): LeafletMarker;
+  remove(): void;
 }
 
 interface LeafletTileLayer {
@@ -120,7 +121,11 @@ function AreaMap({
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const leafletRef = useRef<LeafletStatic | null>(null);
+  const areaMarkerRef = useRef<LeafletMarker | null>(null);
+  const cabinMarkersRef = useRef<LeafletMarker[]>([]);
 
+  // Initialize map once
   const initMap = useCallback(async () => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -149,10 +154,27 @@ function AreaMap({
       { attribution: "© Kartverket", maxZoom: 18 }
     ).addTo(map);
 
-    // Area centre marker
-    L.marker([lat, lng]).addTo(map).bindPopup(`<strong>${name}</strong>`).openPopup();
+    // Area centre marker with safe HTML
+    const areaPopup = document.createElement("strong");
+    areaPopup.textContent = name;
+    const areaMarker = L.marker([lat, lng]).addTo(map).bindPopup(areaPopup).openPopup();
+    areaMarkerRef.current = areaMarker;
 
-    // Cabin markers
+    mapInstanceRef.current = map;
+    leafletRef.current = L;
+  }, [lat, lng, name]);
+
+  // Manage cabin markers separately
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const L = leafletRef.current;
+    if (!map || !L) return;
+
+    // Remove old cabin markers
+    cabinMarkersRef.current.forEach((marker) => marker.remove());
+    cabinMarkersRef.current = [];
+
+    // Add new cabin markers
     for (const cabin of nearbyCabins) {
       const bg = CABIN_TYPE_COLOR[cabin.facilityType] ?? "#666";
       const icon = L.divIcon({
@@ -163,17 +185,27 @@ function AreaMap({
         popupAnchor: [0, -15],
       });
 
-      const capacityLine = cabin.capacity != null
-        ? `<br><span style="color:#5a6e50">${cabin.typeLabel} · ${cabin.capacity} senger</span>`
-        : `<br><span style="color:#5a6e50">${cabin.typeLabel}</span>`;
+      // Build popup with safe HTML
+      const popupDiv = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = cabin.name;
+      popupDiv.appendChild(title);
 
-      L.marker([cabin.lat, cabin.lon], { icon })
+      const details = document.createElement("span");
+      details.style.color = "#5a6e50";
+      details.textContent = cabin.capacity != null
+        ? `${cabin.typeLabel} · ${cabin.capacity} senger`
+        : cabin.typeLabel;
+      popupDiv.appendChild(document.createElement("br"));
+      popupDiv.appendChild(details);
+
+      const marker = L.marker([cabin.lat, cabin.lon], { icon })
         .addTo(map)
-        .bindPopup(`<strong>${cabin.name}</strong>${capacityLine}`);
+        .bindPopup(popupDiv);
+      
+      cabinMarkersRef.current.push(marker);
     }
-
-    mapInstanceRef.current = map;
-  }, [lat, lng, name, nearbyCabins]);
+  }, [nearbyCabins]);
 
   useEffect(() => {
     initMap();
