@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { API_URL, API_HEADERS, type Area, stripHtml, formatArea } from "../shared";
 import WeatherWidget from "@/app/components/WeatherWidget";
+import TripSuggestions from "./TripSuggestions";
 
 /** Minimal Leaflet type surface for CDN usage */
 interface LeafletMap {
@@ -326,6 +327,9 @@ export default function AreaDetailPage() {
                   />
                 </div>
               )}
+
+              {/* Turforslag */}
+              <TripSuggestions areaId={id} />
 
               {/* Beskrivelse */}
               {description && (
