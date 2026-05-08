@@ -5,6 +5,28 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { API_URL, API_HEADERS, type Area, stripHtml, formatArea } from "../shared";
 
+/** Minimal Leaflet type surface for CDN usage */
+interface LeafletMap {
+  setView(center: [number, number], zoom: number): LeafletMap;
+  remove(): void;
+}
+
+interface LeafletMarker {
+  addTo(map: LeafletMap): LeafletMarker;
+  bindPopup(content: string): LeafletMarker;
+  openPopup(): LeafletMarker;
+}
+
+interface LeafletTileLayer {
+  addTo(map: LeafletMap): LeafletTileLayer;
+}
+
+interface LeafletStatic {
+  map(element: HTMLElement): LeafletMap;
+  tileLayer(url: string, options: { attribution: string; maxZoom: number }): LeafletTileLayer;
+  marker(latlng: [number, number]): LeafletMarker;
+}
+
 const AREA_QUERY = `
   query Areas($filter: AreaFilter!) {
     areas(filter: $filter, paging: { first: 1 }) {
@@ -52,7 +74,7 @@ function LeafletMap({
   name: string;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<unknown>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
 
   const initMap = useCallback(async () => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -67,15 +89,15 @@ function LeafletMap({
     }
 
     // Load Leaflet JS
-    const L = await new Promise<typeof import("leaflet")>((resolve) => {
-      if ((window as Record<string, unknown>).L) {
-        resolve((window as Record<string, unknown>).L as typeof import("leaflet"));
+    const win = window as Window & { L?: LeafletStatic };
+    const L = await new Promise<LeafletStatic>((resolve) => {
+      if (win.L) {
+        resolve(win.L);
         return;
       }
       const script = document.createElement("script");
       script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      script.onload = () =>
-        resolve((window as Record<string, unknown>).L as typeof import("leaflet"));
+      script.onload = () => resolve(win.L!);
       document.head.appendChild(script);
     });
 
@@ -101,7 +123,7 @@ function LeafletMap({
     initMap();
     return () => {
       if (mapInstanceRef.current) {
-        (mapInstanceRef.current as { remove: () => void }).remove();
+        mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
