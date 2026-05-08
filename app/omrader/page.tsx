@@ -2,41 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-
-const API_URL =
-  "https://ut-backend-api-2-41145913385.europe-north1.run.app/internal/graphql";
-
-interface Area {
-  id: number;
-  name: string;
-  description?: string | null;
-  areaType: string;
-  provider?: string | null;
-  area?: number | null;
-  centerPointGeojson?: {
-    type: string;
-    coordinates: [number, number];
-  } | null;
-}
-
-interface PageInfo {
-  hasNextPage: boolean;
-  endCursor: string | null;
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function formatArea(sqMeters: number): string {
-  const sqKm = sqMeters / 1_000_000;
-  if (sqKm >= 1) return `${Math.round(sqKm)} km²`;
-  return `${(sqKm).toFixed(1)} km²`;
-}
+import { API_URL, API_HEADERS, type Area, type PageInfo, stripHtml, formatArea } from "./shared";
 
 const AREAS_QUERY = `
   query Areas($first: Int!, $after: ConnectionCursor) {
@@ -74,11 +40,7 @@ async function fetchAreas(cursor?: string | null): Promise<{
 
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Origin: "https://ut.no",
-      "apollo-require-preflight": "true",
-    },
+    headers: API_HEADERS,
     body: JSON.stringify({ query: AREAS_QUERY, variables }),
   });
 
@@ -103,11 +65,17 @@ function AreaCard({ area }: { area: Area }) {
     desc && desc.length > 200 ? desc.slice(0, 200) + "…" : desc;
 
   return (
-    <div className="group rounded-2xl border border-[#e0e8d8] bg-white p-6 hover:shadow-lg hover:border-[#b8d4a0] transition-all duration-200">
+    <Link
+      href={`/omrader/${area.id}`}
+      className="group block rounded-2xl border border-[#e0e8d8] bg-white p-6 hover:shadow-lg hover:border-[#b8d4a0] transition-all duration-200"
+    >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <h2 className="font-semibold text-[#1a2e1a] text-lg leading-snug">
+        <h2 className="font-semibold text-[#1a2e1a] text-lg leading-snug group-hover:text-[#2d4a2d]">
           {area.name}
         </h2>
+        <svg className="h-5 w-5 text-[#b8d4a0] group-hover:text-[#4a6741] transition-colors flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
       </div>
 
       {truncatedDesc && (
@@ -160,7 +128,7 @@ function AreaCard({ area }: { area: Area }) {
           </span>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
