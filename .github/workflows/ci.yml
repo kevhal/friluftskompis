@@ -15,16 +15,19 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        run: pnpm audit --audit-level=high
