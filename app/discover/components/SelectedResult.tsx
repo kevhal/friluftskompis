@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SearchResult } from "@/app/api/search/route";
 import { Button, Badge } from "@/app/components/ui";
 
@@ -12,6 +13,8 @@ const TYPE_LABELS: Record<SearchResult["type"], string> = {
 };
 
 export default function SelectedResult({ result }: Props) {
+  const kartUrl = `/kart?lat=${result.lat}&lon=${result.lon}&name=${encodeURIComponent(result.name)}`;
+
   return (
     <div className="w-full rounded-2xl border border-[#e0e8d8] bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -49,7 +52,9 @@ export default function SelectedResult({ result }: Props) {
 
       <div className="flex flex-wrap gap-3">
         <Button variant="primary">Planlegg tur her</Button>
-        <Button variant="secondary">Vis på kart</Button>
+        <Link href={kartUrl}>
+          <Button variant="secondary">Vis på kart</Button>
+        </Link>
       </div>
     </div>
   );
