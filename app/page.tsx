@@ -10,7 +10,7 @@ export default function Home() {
           <a href="#features" className="hover:text-[#2d4a2d] transition-colors">Funksjoner</a>
           <a href="#om" className="hover:text-[#2d4a2d] transition-colors">Om</a>
           <a
-            href="#"
+            href="/turer"
             className="rounded-full bg-[#2d4a2d] px-4 py-2 text-white hover:bg-[#3d6b3d] transition-colors"
           >
             Kom i gang
@@ -36,7 +36,7 @@ export default function Home() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
           <a
-            href="#"
+            href="/turer"
             className="rounded-full bg-[#2d4a2d] px-8 py-3.5 text-base font-medium text-white hover:bg-[#3d6b3d] transition-colors shadow-md"
           >
             Planlegg din neste tur
@@ -111,7 +111,7 @@ export default function Home() {
           Friluftskompis hjelper deg fra idé til hjemkomst.
         </p>
         <a
-          href="#"
+          href="/turer"
           className="inline-block rounded-full bg-white px-8 py-3.5 text-base font-medium text-[#2d4a2d] hover:bg-[#f0f8ec] transition-colors"
         >
           Start planleggingen gratis
