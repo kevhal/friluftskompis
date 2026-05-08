@@ -24,3 +24,69 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Task visualizer animations */
+@keyframes taskEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 40px;
+  }
+}
+
+@keyframes taskPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes taskExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 40px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+@keyframes taskDot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-task-enter {
+  overflow: hidden;
+  animation: taskEnter 0.2s ease-out forwards;
+}
+
+.animate-task-pulse {
+  overflow: hidden;
+  animation: taskEnter 0.2s ease-out forwards, taskPulse 2s ease-in-out 0.2s infinite;
+}
+
+.animate-task-exit {
+  overflow: hidden;
+  animation: taskExit 0.5s ease-in forwards;
+}
+
+.animate-task-dot {
+  animation: taskDot 1.5s ease-in-out infinite;
+}
