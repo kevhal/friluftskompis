@@ -77,11 +77,12 @@ async function fetchFromApi(): Promise<Cabin[]> {
     for (const { node } of edges) {
       const coords = node.centerPointGeojson?.coordinates;
       if (!coords) continue;
+      const facilityType = node.facilityType ?? "DNT_STAFFED";
       cabins.push({
         id: String(node.id),
         name: node.name,
-        facilityType: node.facilityType ?? "DNT_STAFFED",
-        typeLabel: TYPE_LABELS[node.facilityType] ?? node.facilityType,
+        facilityType,
+        typeLabel: TYPE_LABELS[facilityType] ?? facilityType,
         capacity: node.capacity ?? null,
         lat: coords[1],
         lon: coords[0],
