@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { API_URL, API_HEADERS, type Area, stripHtml, formatArea } from "../shared";
+import WeatherWidget from "@/app/components/WeatherWidget";
 
 /** Minimal Leaflet type surface for CDN usage */
 interface LeafletMap {
@@ -313,6 +314,19 @@ export default function AreaDetailPage() {
                 </div>
               )}
 
+              {/* Vær */}
+              {coords && (
+                <div className="mb-8">
+                  <h2 className="text-lg font-semibold text-[#1a2e1a] mb-3">
+                    Vær
+                  </h2>
+                  <WeatherWidget
+                    coords={{ lat: coords[1], lon: coords[0] }}
+                    label={area.name}
+                  />
+                </div>
+              )}
+
               {/* Beskrivelse */}
               {description && (
                 <div className="mb-8">
@@ -330,7 +344,7 @@ export default function AreaDetailPage() {
       </main>
 
       <footer className="bg-[#1a2e1a] py-6 text-center text-sm text-[#6a8a5a]">
-        © 2025 Friluftskompis
+        © {new Date().getFullYear()} Friluftskompis
       </footer>
     </div>
   );
