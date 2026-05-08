@@ -122,7 +122,6 @@ function AreaMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const leafletRef = useRef<LeafletStatic | null>(null);
-  const areaMarkerRef = useRef<LeafletMarker | null>(null);
   const cabinMarkersRef = useRef<LeafletMarker[]>([]);
 
   // Initialize map once
@@ -157,8 +156,7 @@ function AreaMap({
     // Area centre marker with safe HTML
     const areaPopup = document.createElement("strong");
     areaPopup.textContent = name;
-    const areaMarker = L.marker([lat, lng]).addTo(map).bindPopup(areaPopup).openPopup();
-    areaMarkerRef.current = areaMarker;
+    L.marker([lat, lng]).addTo(map).bindPopup(areaPopup).openPopup();
 
     mapInstanceRef.current = map;
     leafletRef.current = L;
