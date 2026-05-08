@@ -203,6 +203,11 @@ function AreaMap({
 
       cabinMarkersRef.current.push(marker);
     }
+
+    return () => {
+      cabinMarkersRef.current.forEach((marker) => marker.remove());
+      cabinMarkersRef.current = [];
+    };
   }, [nearbyCabins]);
 
   useEffect(() => {
